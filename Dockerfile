@@ -10,12 +10,14 @@ RUN python3 -m venv dbt_env && source dbt_env/bin/activate && \
 
 USER root
 
-ENV JAVA_HOME /usr/lib/jvm/java-17-openjdk-arm64
+ENV JAVA_HOME /usr/lib/jvm/java-17-openjdk-amd64
 RUN export JAVA_HOME
 
 RUN apt update --allow-insecure-repositories && \
     apt-get install -y openjdk-17-jdk && \
     apt-get install -y ant && \
     apt-get clean;
+
+RUN ls /usr/lib/jvm
 
 USER astro
