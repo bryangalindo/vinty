@@ -372,4 +372,4 @@ try:
     )
 
 except Exception as e:
-    st.error(f"An error occurred while fetching data: {e}, {traceback.format_exc()}")
+    log.error(f"An error occurred while fetching data: {e}, {traceback.format_exc()}")
