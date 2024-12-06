@@ -13,13 +13,13 @@ from include.scripts import convert_raw_to_base_data, delete_duplicate_base_data
 
 log = logging.getLogger(__name__)
 
-AWS_S3_BUCKET_NAME = Variable.get("AWS_S3_BUCKET_NAME")
-AWS_S3_BASE_DATA_BUCKET_NAME = Variable.get("AWS_S3_BASE_DATA_BUCKET_NAME")
-AWS_S3_WAREHOUSE_BUCKET = Variable.get("AWS_S3_WAREHOUSE_BUCKET_NAME")
-AWS_ACCESS_KEY_ID = Variable.get("AWS_ACCESS_KEY_ID")
-AWS_SECRET_ACCESS_KEY = Variable.get("AWS_SECRET_ACCESS_KEY")
-AWS_REGION = Variable.get("AWS_REGION")
-ENV = Variable.get("ENV")
+AWS_S3_BUCKET_NAME = os.getenv('AWS_S3_BUCKET_NAME', Variable.get("AWS_S3_BUCKET_NAME"))
+AWS_S3_BASE_DATA_BUCKET_NAME = os.getenv('AWS_S3_BASE_DATA_BUCKET_NAME', Variable.get("AWS_S3_BASE_DATA_BUCKET_NAME"))
+AWS_S3_WAREHOUSE_BUCKET = os.getenv('AWS_S3_WAREHOUSE_BUCKET', Variable.get("AWS_S3_WAREHOUSE_BUCKET_NAME"))
+AWS_ACCESS_KEY_ID = os.getenv('AWS_ACCESS_KEY_ID', Variable.get("AWS_ACCESS_KEY_ID"))
+AWS_SECRET_ACCESS_KEY = os.getenv('AWS_SECRET_ACCESS_KEY', Variable.get("AWS_SECRET_ACCESS_KEY"))
+AWS_REGION = os.getenv('AWS_REGION', Variable.get("AWS_REGION"))
+ENV = os.getenv('ENV', Variable.get("ENV"))
 
 AIRFLOW_HOME = os.environ["AIRFLOW_HOME"]
 AIRFLOW_EXECUTION_DATE = "{{ ds }}"
