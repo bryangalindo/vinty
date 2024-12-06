@@ -1,0 +1,28 @@
+models:
+  - name: stg_rebag__products
+    columns:
+      - name: title
+        tests:
+          - not_null
+      - name: vendor
+        tests:
+          - not_null
+      - name: product_type
+        tests:
+          - not_null
+      - name: ingestion_date
+        tests:
+          - not_null
+      - name: published_at
+        tests:
+          - not_null
+      - name: id
+        tests:
+          - not_null
+          - unique
+      - name: price
+        tests:
+          - not_null
+      - name: days_on_market
+        tests:
+          - not_null

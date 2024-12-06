@@ -1,0 +1,29 @@
+name: 'transform'
+version: '1.0.0'
+
+profile: 'transform'
+
+model-paths: ["models"]
+analysis-paths: ["analyses"]
+test-paths: ["tests"]
+seed-paths: ["seeds"]
+macro-paths: ["macros"]
+snapshot-paths: ["snapshots"]
+
+clean-targets:
+  - "target"
+  - "dbt_packages"
+
+models:
+  transform:
+    staging:
+      +materialized: view
+    incremental:
+      +materialized: incremental
+
+vars:
+  products_table: >
+    {{ 
+      "products" if env_var("ENV") == "prod" 
+      else "dev_products" 
+    }}

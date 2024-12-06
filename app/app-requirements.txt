@@ -1,0 +1,6 @@
+matplotlib
+streamlit
+seaborn
+trino
+numpy
+gunicorn
