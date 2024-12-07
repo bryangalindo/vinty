@@ -1,8 +1,40 @@
+# Ignore directories and files that are not needed for the Docker image
+
+# Astronomer-specific files
 astro
+
+# Git repository files
 .git
+.gitignore
+
+# Environment and configuration files
 .env
 airflow_settings.yaml
-logs/
-.venv
-airflow.db
 airflow.cfg
+
+# Local airflow database and logs
+airflow.db
+logs/
+
+# Python virtual environment
+.venv/
+venv/
+
+# DAGs folder - Include only if you copy specific files in the Dockerfile
+dags/
+
+# Compiled Python files
+*.pyc
+__pycache__/
+
+# Editor/IDE configuration and temp files
+.vscode/
+.idea/
+*.swp
+*.bak
+*~
+
+# Other temporary or unnecessary files
+*.log
+*.tmp
+.DS_Store
