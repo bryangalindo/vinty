@@ -9,11 +9,11 @@ from airflow.operators.python import PythonOperator
 from airflow.utils.task_group import TaskGroup
 
 from include.scripts import (
-    convert_raw_to_base_data,
-    delete_duplicate_base_data,
     add_new_products,
-    delete_duplicate_product_rows,
+    convert_raw_to_base_data,
     create_products_table,
+    delete_duplicate_base_data,
+    delete_duplicate_product_rows,
 )
 
 log = logging.getLogger(__name__)
