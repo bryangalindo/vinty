@@ -47,6 +47,8 @@ ICEBERG_REBAG_STORE_DB = "rebag"
 ICEBERG_CATALOG = "vinty"
 ICEBERG_DCT_STORE_DB = "dct"
 
+DBT_TARGET = ENV.lower()
+
 
 def delete_vsp_duplicate_base_data_task():
     return PythonOperator(
@@ -282,32 +284,55 @@ def add_new_treasures_products_task():
     )
 
 
-def build_dbt_bash_command(store: str) -> str:
-    target = ENV.lower()
+def build_dbt_bash_command_prefix() -> str:
     return (
         f"cd {AIRFLOW_HOME} "
         f"&& source dbt_env/bin/activate "
         f"&& cd transform "
         f"&& dbt deps "
-        f"&& dbt build -s stg_{store}__products --target {target} "
-        f"&& dbt build -s inc_{store}__sold_products --target {target} "
-        f'--vars "{{"TODAY": "{AIRFLOW_EXECUTION_DATE}", '
-        f'"YESTERDAY": "{AIRFLOW_PREVIOUS_EXECUTION_DATE}"}}"'
     )
 
 
-def create_vsp_models_task():
-    command = build_dbt_bash_command("vsp")
+def create_vsp_stg_models_task():
+    command = build_dbt_bash_command_prefix()
+    command += f"&& dbt build -s stg_vsp__products --target {DBT_TARGET} "
     return BashOperator(
-        task_id="create_vsp_models",
+        task_id="create_stg_models",
         bash_command=command,
     )
 
 
-def create_rebag_models_task():
-    command = build_dbt_bash_command("rebag")
+def create_vsp_inc_models_task():
+    command = build_dbt_bash_command_prefix()
+    command += (
+        f"&& dbt build -s inc_vsp__sold_products --target {DBT_TARGET} "
+        f'--vars "{{"TODAY": "{AIRFLOW_EXECUTION_DATE}", '
+        f'"YESTERDAY": "{AIRFLOW_PREVIOUS_EXECUTION_DATE}"}}"'
+    )
     return BashOperator(
-        task_id="create_rebag_models",
+        task_id="create_stg_models",
+        bash_command=command,
+    )
+
+
+def create_rebag_stg_models_task():
+    command = build_dbt_bash_command_prefix()
+    command += f"&& dbt build -s stg_rebag__products --target {DBT_TARGET}"
+    return BashOperator(
+        task_id="create_stg_models",
+        bash_command=command,
+    )
+
+
+def create_rebag_inc_models_task():
+    command = build_dbt_bash_command_prefix()
+    command += (
+        f"&& dbt build -s inc_rebag__sold_products --target {DBT_TARGET} "
+        f'--vars "{{"TODAY": "{AIRFLOW_EXECUTION_DATE}", '
+        f'"YESTERDAY": "{AIRFLOW_PREVIOUS_EXECUTION_DATE}"}}"'
+    )
+    return BashOperator(
+        task_id="create_inc_models",
         bash_command=command,
     )
 
@@ -386,8 +411,17 @@ def vinty_analytics_pipeline():
     join_ingestion_tasks = EmptyOperator(task_id="join_ingestion_tasks")
 
     with TaskGroup("transform_tasks") as transform_tasks:
-        create_vsp_models_task()
-        create_rebag_models_task()
+        with TaskGroup("vsp_transform_tasks"):
+            create_vsp_stg_models = create_vsp_stg_models_task()
+            create_vsp_inc_models = create_vsp_inc_models_task()
+
+            create_vsp_stg_models >> create_vsp_inc_models
+
+        with TaskGroup("rebag_transform_tasks"):
+            create_rebag_stg_models = create_rebag_stg_models_task()
+            create_rebag_inc_models = create_rebag_inc_models_task()
+
+            create_rebag_stg_models >> create_rebag_inc_models
 
     end = EmptyOperator(task_id="end")
 
