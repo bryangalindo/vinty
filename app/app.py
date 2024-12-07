@@ -194,6 +194,85 @@ try:
 
     filtered_df["sold_date"] = pd.to_datetime(filtered_df["sold_date"]).dt.date
 
+    st.title("Total Sales by Day of the Week")
+
+    sales_per_day = filtered_df.copy()
+    sales_per_day["sold_date"] = pd.to_datetime(sales_per_day["sold_date"])
+
+    sales_per_day["day_of_week"] = sales_per_day["sold_date"].dt.day_name()
+
+    sales_by_day = (
+        sales_per_day.groupby("day_of_week").size().reset_index(name="sales_count")
+    )
+
+    days_order = [
+        "Monday",
+        "Tuesday",
+        "Wednesday",
+        "Thursday",
+        "Friday",
+        "Saturday",
+        "Sunday",
+    ]
+    sales_by_day = (
+        sales_by_day.set_index("day_of_week")
+        .reindex(days_order, fill_value=0)
+        .reset_index()
+    )
+
+    fig, ax = plt.subplots(figsize=(10, 6))
+
+    sns.barplot(
+        data=sales_by_day,
+        x="day_of_week",
+        y="sales_count",
+        palette="husl",
+        ax=ax,
+    )
+
+    ax.set_title("Total Sales by Day of the Week", fontsize=16)
+    ax.set_xlabel("Day of the Week", fontsize=14)
+    ax.set_ylabel("Number of Sales", fontsize=14)
+    ax.grid(axis="y", linestyle="--", alpha=0.6)
+
+    ax.set_xticklabels(ax.get_xticklabels(), rotation=45, ha="right")
+
+    fig.tight_layout()
+
+    st.pyplot(fig)
+
+    st.title("Total Sales Per Day")
+
+    daily_sales = (
+        filtered_df.groupby(["sold_date"]).size().reset_index(name="sales_count")
+    )
+
+    fig, ax = plt.subplots(figsize=(12, 6))
+
+    sns.lineplot(
+        data=daily_sales,
+        x="sold_date",
+        y="sales_count",
+        marker="o",
+        ax=ax,
+    )
+
+    ax.set_title("Number of Sales Per Day", fontsize=16)
+    ax.set_xlabel("Date", fontsize=14)
+    ax.set_ylabel("Number of Sales", fontsize=14)
+    ax.grid(True, linestyle="--", alpha=0.6)
+
+    x_labels = [
+        f"{date}\n({pd.to_datetime(date).strftime('%A')})"
+        for date in daily_sales["sold_date"]
+    ]
+    ax.set_xticks(daily_sales["sold_date"])
+    ax.set_xticklabels(x_labels, rotation=45, ha="right")
+
+    fig.tight_layout()
+
+    st.pyplot(fig)
+
     sales_per_day = (
         filtered_df.groupby(["sold_date", "vendor"])
         .size()
