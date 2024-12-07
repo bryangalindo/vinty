@@ -5,6 +5,7 @@ import os
 from airflow.decorators import dag
 from airflow.models import Variable
 from airflow.operators.bash import BashOperator
+from airflow.operators.empty import EmptyOperator
 from airflow.operators.python import PythonOperator
 from airflow.utils.task_group import TaskGroup
 
@@ -192,6 +193,8 @@ def create_rebag_models_task():
     tags=["ingestion"],
 )
 def vinty_analytics_pipeline():
+    start = EmptyOperator(task_id="start")
+
     with TaskGroup("vsp_ingestion_tasks") as vsp_ingestion_tasks:
         delete_duplicate_base_data = delete_vsp_duplicate_base_data_task()
         convert_raw_data_to_base_data = convert_vsp_raw_data_to_base_data_task()
@@ -222,13 +225,20 @@ def vinty_analytics_pipeline():
             >> add_new_products
         )
 
+    join_ingestion_tasks = EmptyOperator(task_id="join_ingestion_tasks")
+
     with TaskGroup("transform_tasks") as transform_tasks:
         create_vsp_models = create_vsp_models_task()
         create_rebag_models = create_rebag_models_task()
 
         create_vsp_models >> create_rebag_models
 
-    vsp_ingestion_tasks >> rebag_ingestion_tasks >> transform_tasks
+    (
+        start
+        >> [vsp_ingestion_tasks, rebag_ingestion_tasks]
+        >> join_ingestion_tasks
+        >> transform_tasks
+    )
 
 
 vinty_analytics_pipeline()
