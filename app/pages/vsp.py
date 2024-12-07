@@ -53,6 +53,12 @@ def query_trino(query: str):
 
 
 def vsp_page():
+    st.set_page_config(
+        page_title="VSP Handbag Analytics",
+        page_icon="👜",
+        layout="centered",
+        initial_sidebar_state="expanded",
+    )
     st.title("VSP Resale Handbag Analytics")
     try:
         df = query_trino(sql_query)

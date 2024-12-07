@@ -53,7 +53,13 @@ def query_trino(query: str):
 
 
 def rebag_page():
-    st.title("REBAG Resale Handbag Analytics")
+    st.set_page_config(
+        page_title="REBAG Resale Handbag Analytics",
+        page_icon="👜",
+        layout="centered",
+        initial_sidebar_state="expanded",
+    )
+    st.title("REBAG Handbag Analytics")
     try:
         df = query_trino(sql_query)
         df["price"] = df["price"].astype(int)
