@@ -228,10 +228,8 @@ def vinty_analytics_pipeline():
     join_ingestion_tasks = EmptyOperator(task_id="join_ingestion_tasks")
 
     with TaskGroup("transform_tasks") as transform_tasks:
-        create_vsp_models = create_vsp_models_task()
-        create_rebag_models = create_rebag_models_task()
-
-        create_vsp_models >> create_rebag_models
+        create_vsp_models_task()
+        create_rebag_models_task()
 
     end = EmptyOperator(task_id="end")
 
