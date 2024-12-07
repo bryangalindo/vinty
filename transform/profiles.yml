@@ -5,7 +5,7 @@ transform:
       type: trino
       method: ldap
       host: "{{ env_var('STARBURST_HOST') }}"
-      port: "{{ env_var('STARBURST_PORT') }}"
+      port: 443
       user: "{{ env_var('STARBURST_USER') }}"
       password: "{{ env_var('STARBURST_PASSWORD') }}"
       catalog: vinty
@@ -14,7 +14,7 @@ transform:
       type: trino
       method: ldap
       host: "{{ env_var('STARBURST_HOST') }}"
-      port: "{{ env_var('STARBURST_PORT') }}"
+      port: 443
       user: "{{ env_var('STARBURST_USER') }}"
       password: "{{ env_var('STARBURST_PASSWORD') }}"
       catalog: vinty
