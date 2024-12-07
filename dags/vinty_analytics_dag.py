@@ -233,11 +233,14 @@ def vinty_analytics_pipeline():
 
         create_vsp_models >> create_rebag_models
 
+    end = EmptyOperator(task_id="end")
+
     (
         start
         >> [vsp_ingestion_tasks, rebag_ingestion_tasks]
         >> join_ingestion_tasks
         >> transform_tasks
+        >> end
     )
 
 
