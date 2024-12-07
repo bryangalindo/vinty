@@ -77,7 +77,7 @@ def convert_vsp_raw_data_to_base_data_task():
 
 def convert_rebag_raw_data_to_base_data_task():
     return PythonOperator(
-        task_id="convert_raw_data_to_base_data",
+        task_id="convert_raw_to_base",
         python_callable=convert_raw_to_base_data.main,
         op_args=(
             ICEBERG_REBAG_STORE_DB,
