@@ -161,7 +161,7 @@ def build_dbt_bash_command(store: str) -> str:
         f"&& cd transform "
         f"&& dbt deps "
         f"&& dbt build -s stg_{store}__products --target {target}"
-        f"&& dbt build -s inc_{store}__sold_products --target {target}"
+        f"&& dbt build -s inc_{store}__sold_products --target {target} "
         f'--vars "{{"TODAY": "{AIRFLOW_EXECUTION_DATE}", '
         f'"YESTERDAY": "{AIRFLOW_PREVIOUS_EXECUTION_DATE}"}}"'
     )
