@@ -25,7 +25,7 @@ def json_to_parquet_s3(input_bucket, output_bucket, prefix):
     response = s3_client.list_objects_v2(Bucket=input_bucket, Prefix=prefix)
     dfs = []
     objects = response.get("Contents", [])
-    log.info(f'Found {len(objects)} objects in {input_bucket=}, {prefix=}')
+    log.info(f"Found {len(objects)} objects in {input_bucket=}, {prefix=}")
     for i, obj in enumerate(objects):
         key = obj["Key"]
         log.info(f"Starting to process {i=}, {key=}...")
