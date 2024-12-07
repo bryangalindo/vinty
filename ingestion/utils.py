@@ -1,8 +1,7 @@
 import functools
 import random
 
-from constants import USER_AGENTS, HEADERS
-
+from constants import HEADERS, USER_AGENTS
 from logger import get_logger
 
 log = get_logger(__name__)

@@ -6,23 +6,11 @@ import tempfile
 import traceback
 
 import boto3
-import requests
-from botocore.exceptions import (
-    NoCredentialsError,
-    PartialCredentialsError,
-    ClientError,
-)
-
-
 import config as cfg
+import requests
+from botocore.exceptions import ClientError, NoCredentialsError, PartialCredentialsError
 from logger import get_logger
-from utils import (
-    retry,
-    generate_headers,
-    sleep_for_random_n_seconds,
-    Timer,
-)
-
+from utils import Timer, generate_headers, retry, sleep_for_random_n_seconds
 
 log = get_logger(__name__)
 
