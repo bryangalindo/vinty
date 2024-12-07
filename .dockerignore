@@ -21,7 +21,6 @@ logs/
 venv/
 
 # DAGs folder - Include only if you copy specific files in the Dockerfile
-dags/
 
 # Compiled Python files
 *.pyc
@@ -33,6 +32,10 @@ __pycache__/
 *.swp
 *.bak
 *~
+
+# Non-DAG related dirs
+app/
+ingestion/
 
 # Other temporary or unnecessary files
 *.log
