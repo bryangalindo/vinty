@@ -20,8 +20,6 @@ logs/
 .venv/
 venv/
 
-# DAGs folder - Include only if you copy specific files in the Dockerfile
-
 # Compiled Python files
 *.pyc
 __pycache__/
