@@ -64,7 +64,7 @@ def delete_rebag_duplicate_base_data_task():
 
 def convert_vsp_raw_data_to_base_data_task():
     return PythonOperator(
-        task_id="convert_raw_data_to_base_data",
+        task_id="convert_raw_to_base",
         python_callable=convert_raw_to_base_data.main,
         op_args=(
             ICEBERG_VSP_STORE_DB,
@@ -90,7 +90,7 @@ def convert_rebag_raw_data_to_base_data_task():
 
 def create_vsp_products_table_task():
     return PythonOperator(
-        task_id="create_vsp_products_table",
+        task_id="create_products_table",
         python_callable=create_products_table.main,
         op_args=(
             ICEBERG_VSP_STORE_DB,
@@ -101,7 +101,7 @@ def create_vsp_products_table_task():
 
 def create_rebag_products_table_task():
     return PythonOperator(
-        task_id="create_rebag_products_table",
+        task_id="create_products_table",
         python_callable=create_products_table.main,
         op_args=(
             ICEBERG_REBAG_STORE_DB,
@@ -112,7 +112,7 @@ def create_rebag_products_table_task():
 
 def delete_vsp_duplicate_product_rows_task():
     return PythonOperator(
-        task_id="delete_vsp_duplicate_product_rows",
+        task_id="delete_duplicate_product_rows",
         python_callable=delete_duplicate_product_rows.main,
         op_args=(
             ICEBERG_VSP_STORE_DB,
@@ -123,7 +123,7 @@ def delete_vsp_duplicate_product_rows_task():
 
 def delete_rebag_duplicate_product_rows_task():
     return PythonOperator(
-        task_id="delete_rebag_duplicate_product_rows",
+        task_id="delete_duplicate_product_rows",
         python_callable=delete_duplicate_product_rows.main,
         op_args=(
             ICEBERG_REBAG_STORE_DB,
@@ -134,7 +134,7 @@ def delete_rebag_duplicate_product_rows_task():
 
 def add_new_vsp_products_task():
     return PythonOperator(
-        task_id="add_new_vsp_products",
+        task_id="add_new_products",
         python_callable=add_new_products.main,
         op_args=(
             ICEBERG_VSP_STORE_DB,
@@ -145,7 +145,7 @@ def add_new_vsp_products_task():
 
 def add_new_rebag_products_task():
     return PythonOperator(
-        task_id="add_new_rebag_products",
+        task_id="add_new_products",
         python_callable=add_new_products.main,
         op_args=(
             ICEBERG_REBAG_STORE_DB,
