@@ -1,12 +1,10 @@
 import logging
 import os
 
-import dotenv
 import pandas as pd
 import streamlit as st
 import trino
 
-dotenv.load_dotenv("./.env")
 
 log = logging.getLogger(__name__)
 
