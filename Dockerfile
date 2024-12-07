@@ -6,7 +6,7 @@ WORKDIR /usr/local/airflow
 COPY dbt-requirements.txt ./
 
 RUN python3 -m venv dbt_env && source dbt_env/bin/activate && \
-    pip install --upgrade pip && pip install --no-cache-dir -r dbt-requirements.txt && deactivate
+    pip install --upgrade pip && pip install -r dbt-requirements.txt && deactivate
 
 USER root
 
