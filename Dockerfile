@@ -18,6 +18,4 @@ RUN apt update --allow-insecure-repositories && \
     apt-get install -y ant && \
     apt-get clean;
 
-RUN ls /usr/lib/jvm
-
 USER astro
