@@ -5,10 +5,14 @@ import pandas as pd
 import streamlit as st
 import trino
 
-
 log = logging.getLogger(__name__)
 
 ENV = os.environ["ENV"]
+
+if ENV == "dev":
+    import dotenv
+
+    dotenv.load_dotenv("./.env")
 
 SCHEMA = "analytics" if ENV == "prod" else "dbt_dev"
 
