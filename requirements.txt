@@ -1,4 +1,4 @@
 boto3
 pandas
-apache-airflow-providers-apache-spark
+pyspark
 pytest
