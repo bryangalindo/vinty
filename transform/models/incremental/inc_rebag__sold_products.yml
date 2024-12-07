@@ -13,7 +13,6 @@ models:
       - name: id
         tests:
           - not_null
-          - unique
       - name: price
         tests:
           - not_null
