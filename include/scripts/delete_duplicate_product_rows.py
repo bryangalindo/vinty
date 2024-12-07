@@ -1,6 +1,5 @@
 import datetime
 import logging
-import sys
 
 from airflow.models import Variable
 from pyspark import SparkConf
@@ -9,7 +8,7 @@ from pyspark.sql import SparkSession
 AWS_S3_WAREHOUSE_BUCKET = Variable.get("AWS_S3_WAREHOUSE_BUCKET_NAME")
 AWS_ACCESS_KEY_ID = Variable.get("AWS_ACCESS_KEY_ID")
 AWS_SECRET_ACCESS_KEY = Variable.get("AWS_SECRET_ACCESS_KEY")
-AWS_REGION_NAME = Variable.get("AWS_REGION")
+AWS_REGION = Variable.get("AWS_REGION")
 ENV = Variable.get("ENV")
 
 ICEBERG_CATALOG = "vinty"
@@ -17,11 +16,19 @@ ICEBERG_TABLE = "products" if ENV == "prod" else "dev_products"
 
 log = logging.getLogger(__name__)
 
+SPARK_PACKAGES = (
+    "org.apache.iceberg:iceberg-spark-runtime-3.5_2.12:1.5.0,"
+    "org.apache.hadoop:hadoop-aws:3.3.4,"
+    "com.amazonaws:aws-java-sdk-bundle:1.12.723,"
+    "org.apache.iceberg:iceberg-aws-bundle:1.7.0,"
+)
+
 
 def build_spark_session():
     conf = (
         SparkConf()
-        .setAppName("DeleteDuplicateProductRows")
+        .setAppName("AddNewProductRows")
+        .set("spark.jars.packages", SPARK_PACKAGES)
         .set(
             f"spark.sql.catalog.{ICEBERG_CATALOG}",
             "org.apache.iceberg.spark.SparkCatalog",
@@ -38,14 +45,16 @@ def build_spark_session():
             f"spark.sql.catalog.{ICEBERG_CATALOG}.io-impl",
             "org.apache.iceberg.aws.s3.S3FileIO",
         )
+        .set(f"spark.sql.catalog.{ICEBERG_CATALOG}.aws.region", AWS_REGION)
         .set("spark.hadoop.fs.s3a.access.key", AWS_ACCESS_KEY_ID)
         .set("spark.hadoop.fs.s3a.secret.key", AWS_SECRET_ACCESS_KEY)
         .set(
             "spark.hadoop.fs.s3a.aws.credentials.provider",
             "org.apache.hadoop.fs.s3a.SimpleAWSCredentialsProvider",
         )
+        .set("spark.hadoop.fs.s3a.region", AWS_REGION)
     )
-    return SparkSession.builder.config(conf=conf).getOrCreate()
+    return SparkSession.builder.master("local[*]").config(conf=conf).getOrCreate()
 
 
 def main(store: str, iso_timestamp: str):
@@ -70,9 +79,3 @@ def main(store: str, iso_timestamp: str):
         f"Successfully deleted records with {ingestion_date} "
         f"from table={absolute_table_path}, {old_count=}, {new_count=}"
     )
-
-
-if __name__ == "__main__":
-    store = sys.argv[1]
-    iso_timestamp = sys.argv[2]
-    main(store, iso_timestamp)

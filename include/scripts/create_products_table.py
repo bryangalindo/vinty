@@ -35,6 +35,13 @@ glue_client = boto3.client(
     region_name=AWS_REGION,
 )
 
+SPARK_PACKAGES = (
+    "org.apache.iceberg:iceberg-spark-runtime-3.5_2.12:1.5.0,"
+    "org.apache.hadoop:hadoop-aws:3.3.4,"
+    "com.amazonaws:aws-java-sdk-bundle:1.12.723,"
+    "org.apache.iceberg:iceberg-aws-bundle:1.7.0,"
+)
+
 
 def get_table(client, db, table):
     try:
@@ -47,6 +54,7 @@ def build_spark_session():
     conf = (
         SparkConf()
         .setAppName("CreateIcebergTable")
+        .set("spark.jars.packages", SPARK_PACKAGES)
         .set(
             f"spark.sql.catalog.{ICEBERG_CATALOG}",
             "org.apache.iceberg.spark.SparkCatalog",
@@ -72,7 +80,7 @@ def build_spark_session():
         )
         .set("spark.hadoop.fs.s3a.region", AWS_REGION)
     )
-    return SparkSession.builder.config(conf=conf).getOrCreate()
+    return SparkSession.builder.master("local[*]").config(conf=conf).getOrCreate()
 
 
 def main(store: str, iso_timestamp: str):
@@ -108,9 +116,3 @@ def main(store: str, iso_timestamp: str):
     log.info(
         f"Successfully created new iceberg table {absolute_table_path} with {schema=}"
     )
-
-
-if __name__ == "__main__":
-    store = sys.argv[1]
-    iso_timestamp = sys.argv[2]
-    main(store, iso_timestamp)

@@ -9,17 +9,29 @@ from airflow.operators.python import PythonOperator
 from airflow.providers.apache.spark.operators.spark_submit import SparkSubmitOperator
 from airflow.utils.task_group import TaskGroup
 
-from include.scripts import convert_raw_to_base_data, delete_duplicate_base_data
+from include.scripts import (
+    convert_raw_to_base_data,
+    delete_duplicate_base_data,
+    add_new_products,
+    delete_duplicate_product_rows,
+    create_products_table,
+)
 
 log = logging.getLogger(__name__)
 
-AWS_S3_BUCKET_NAME = os.getenv('AWS_S3_BUCKET_NAME', Variable.get("AWS_S3_BUCKET_NAME"))
-AWS_S3_BASE_DATA_BUCKET_NAME = os.getenv('AWS_S3_BASE_DATA_BUCKET_NAME', Variable.get("AWS_S3_BASE_DATA_BUCKET_NAME"))
-AWS_S3_WAREHOUSE_BUCKET = os.getenv('AWS_S3_WAREHOUSE_BUCKET', Variable.get("AWS_S3_WAREHOUSE_BUCKET_NAME"))
-AWS_ACCESS_KEY_ID = os.getenv('AWS_ACCESS_KEY_ID', Variable.get("AWS_ACCESS_KEY_ID"))
-AWS_SECRET_ACCESS_KEY = os.getenv('AWS_SECRET_ACCESS_KEY', Variable.get("AWS_SECRET_ACCESS_KEY"))
-AWS_REGION = os.getenv('AWS_REGION', Variable.get("AWS_REGION"))
-ENV = os.getenv('ENV', Variable.get("ENV"))
+AWS_S3_BUCKET_NAME = os.getenv("AWS_S3_BUCKET_NAME", Variable.get("AWS_S3_BUCKET_NAME"))
+AWS_S3_BASE_DATA_BUCKET_NAME = os.getenv(
+    "AWS_S3_BASE_DATA_BUCKET_NAME", Variable.get("AWS_S3_BASE_DATA_BUCKET_NAME")
+)
+AWS_S3_WAREHOUSE_BUCKET = os.getenv(
+    "AWS_S3_WAREHOUSE_BUCKET", Variable.get("AWS_S3_WAREHOUSE_BUCKET_NAME")
+)
+AWS_ACCESS_KEY_ID = os.getenv("AWS_ACCESS_KEY_ID", Variable.get("AWS_ACCESS_KEY_ID"))
+AWS_SECRET_ACCESS_KEY = os.getenv(
+    "AWS_SECRET_ACCESS_KEY", Variable.get("AWS_SECRET_ACCESS_KEY")
+)
+AWS_REGION = os.getenv("AWS_REGION", Variable.get("AWS_REGION"))
+ENV = os.getenv("ENV", Variable.get("ENV"))
 
 AIRFLOW_HOME = os.environ["AIRFLOW_HOME"]
 AIRFLOW_EXECUTION_DATE = "{{ ds }}"
@@ -32,32 +44,6 @@ os.environ["AWS_ACCESS_KEY_ID"] = AWS_ACCESS_KEY_ID
 ICEBERG_VSP_STORE_DB = "vsp"
 ICEBERG_REBAG_STORE_DB = "rebag"
 ICEBERG_CATALOG = "vinty"
-
-SPARK_ENV_VARS = {
-    "AWS_REGION": AWS_REGION,
-    "AWS_SECRET_ACCESS_KEY": AWS_SECRET_ACCESS_KEY,
-    "AWS_ACCESS_KEY_ID": AWS_ACCESS_KEY_ID,
-    "ENV": ENV,
-}
-SPARK_CONFIGS = {
-    "spark.app.name": "CreateIcebergTable",
-    f"spark.sql.catalog.{ICEBERG_CATALOG}": "org.apache.iceberg.spark.SparkCatalog",
-    f"spark.sql.catalog.{ICEBERG_CATALOG}.catalog-impl": "org.apache.iceberg.aws.glue.GlueCatalog",
-    f"spark.sql.catalog.{ICEBERG_CATALOG}.warehouse": f"s3://{AWS_S3_WAREHOUSE_BUCKET}/",
-    f"spark.sql.catalog.{ICEBERG_CATALOG}.io-impl": "org.apache.iceberg.aws.s3.S3FileIO",
-    f"spark.sql.catalog.{ICEBERG_CATALOG}.aws.region": AWS_REGION,
-    "spark.hadoop.fs.s3a.access.key": AWS_ACCESS_KEY_ID,
-    "spark.hadoop.fs.s3a.secret.key": AWS_SECRET_ACCESS_KEY,
-    "spark.hadoop.fs.s3a.aws.credentials.provider": "org.apache.hadoop.fs.s3a.SimpleAWSCredentialsProvider",
-    "spark.hadoop.fs.s3a.region": AWS_REGION,
-}
-
-SPARK_PACKAGES = (
-    "org.apache.iceberg:iceberg-spark-runtime-3.5_2.12:1.5.0,"
-    "org.apache.hadoop:hadoop-aws:3.3.4,"
-    "com.amazonaws:aws-java-sdk-bundle:1.12.723,"
-    "org.apache.iceberg:iceberg-aws-bundle:1.7.0,"
-)
 
 
 def delete_vsp_duplicate_base_data_task():
@@ -103,70 +89,68 @@ def convert_rebag_raw_data_to_base_data_task():
 
 
 def create_vsp_products_table_task():
-    return SparkSubmitOperator(
-        task_id="create_products_table",
-        conn_id="my_spark_conn",
-        application="./include/scripts/create_products_table.py",
-        application_args=[ICEBERG_VSP_STORE_DB, "{{ ds }}"],
-        packages=SPARK_PACKAGES,
-        conf=SPARK_CONFIGS,
+    return PythonOperator(
+        task_id="create_vsp_products_table",
+        python_callable=create_products_table.main,
+        op_args=(
+            ICEBERG_VSP_STORE_DB,
+            "{{ ds }}",
+        ),
     )
 
 
 def create_rebag_products_table_task():
-    return SparkSubmitOperator(
-        task_id="create_products_table",
-        conn_id="my_spark_conn",
-        application="./include/scripts/create_products_table.py",
-        application_args=[ICEBERG_REBAG_STORE_DB, "{{ ds }}"],
-        packages=SPARK_PACKAGES,
-        conf=SPARK_CONFIGS,
+    return PythonOperator(
+        task_id="create_rebag_products_table",
+        python_callable=create_products_table.main,
+        op_args=(
+            ICEBERG_REBAG_STORE_DB,
+            "{{ ds }}",
+        ),
     )
 
 
 def delete_vsp_duplicate_product_rows_task():
-    return SparkSubmitOperator(
-        task_id="delete_duplicate_product_rows",
-        conn_id="my_spark_conn",
-        application="./include/scripts/delete_duplicate_product_rows.py",
-        application_args=[ICEBERG_VSP_STORE_DB, "{{ ds }}"],
-        packages=SPARK_PACKAGES,
-        conf=SPARK_CONFIGS,
+    return PythonOperator(
+        task_id="delete_vsp_duplicate_product_rows",
+        python_callable=delete_duplicate_product_rows.main,
+        op_args=(
+            ICEBERG_VSP_STORE_DB,
+            "{{ ds }}",
+        ),
     )
 
 
 def delete_rebag_duplicate_product_rows_task():
-    return SparkSubmitOperator(
-        task_id="delete_duplicate_product_rows",
-        conn_id="my_spark_conn",
-        application="./include/scripts/delete_duplicate_product_rows.py",
-        application_args=[ICEBERG_REBAG_STORE_DB, "{{ ds }}"],
-        packages=SPARK_PACKAGES,
-        conf=SPARK_CONFIGS,
+    return PythonOperator(
+        task_id="delete_rebag_duplicate_product_rows",
+        python_callable=delete_duplicate_product_rows.main,
+        op_args=(
+            ICEBERG_REBAG_STORE_DB,
+            "{{ ds }}",
+        ),
     )
 
 
 def add_new_vsp_products_task():
-    return SparkSubmitOperator(
-        task_id="add_new_products",
-        conn_id="my_spark_conn",
-        application="./include/scripts/add_new_products.py",
-        application_args=[ICEBERG_VSP_STORE_DB, "{{ ds }}"],
-        packages=SPARK_PACKAGES,
-        conf=SPARK_CONFIGS,
-        env_vars=SPARK_ENV_VARS,
+    return PythonOperator(
+        task_id="add_new_vsp_products",
+        python_callable=add_new_products.main,
+        op_args=(
+            ICEBERG_VSP_STORE_DB,
+            "{{ ds }}",
+        ),
     )
 
 
 def add_new_rebag_products_task():
-    return SparkSubmitOperator(
-        task_id="add_new_products",
-        conn_id="my_spark_conn",
-        application="./include/scripts/add_new_products.py",
-        application_args=[ICEBERG_REBAG_STORE_DB, "{{ ds }}"],
-        packages=SPARK_PACKAGES,
-        conf=SPARK_CONFIGS,
-        env_vars=SPARK_ENV_VARS,
+    return PythonOperator(
+        task_id="add_new_rebag_products",
+        python_callable=add_new_products.main,
+        op_args=(
+            ICEBERG_REBAG_STORE_DB,
+            "{{ ds }}",
+        ),
     )
 
 
