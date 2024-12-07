@@ -1,6 +1,5 @@
 import datetime
 import logging
-import sys
 
 import boto3
 from airflow.models import Variable
