@@ -1,0 +1,5 @@
+sources:
+  - name: treasures
+    tables:
+      - name: dev_products
+      - name:  products
