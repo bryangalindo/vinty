@@ -337,6 +337,59 @@ def create_rebag_inc_models_task():
     )
 
 
+def create_dct_stg_models_task():
+    command = build_dbt_bash_command_prefix()
+    command += f"&& dbt build -s stg_dct__products --target {DBT_TARGET}"
+    return BashOperator(
+        task_id="create_stg_models",
+        bash_command=command,
+    )
+
+
+def create_dct_inc_models_task():
+    command = build_dbt_bash_command_prefix()
+    command += (
+        f"&& dbt build -s inc_dct__sold_products --target {DBT_TARGET} "
+        f'--vars "{{"TODAY": "{AIRFLOW_EXECUTION_DATE}", '
+        f'"YESTERDAY": "{AIRFLOW_PREVIOUS_EXECUTION_DATE}"}}"'
+    )
+    return BashOperator(
+        task_id="create_inc_models",
+        bash_command=command,
+    )
+
+
+def create_treasures_stg_models_task():
+    command = build_dbt_bash_command_prefix()
+    command += f"&& dbt build -s stg_dct__products --target {DBT_TARGET}"
+    return BashOperator(
+        task_id="create_stg_models",
+        bash_command=command,
+    )
+
+
+def create_treasures_inc_models_task():
+    command = build_dbt_bash_command_prefix()
+    command += (
+        f"&& dbt build -s inc_dct__sold_products --target {DBT_TARGET} "
+        f'--vars "{{"TODAY": "{AIRFLOW_EXECUTION_DATE}", '
+        f'"YESTERDAY": "{AIRFLOW_PREVIOUS_EXECUTION_DATE}"}}"'
+    )
+    return BashOperator(
+        task_id="create_inc_models",
+        bash_command=command,
+    )
+
+
+def create_sold_products_model():
+    command = build_dbt_bash_command_prefix()
+    command += f"&& dbt build -s sold_products --target {DBT_TARGET}"
+    return BashOperator(
+        task_id="create_sold_products_model",
+        bash_command=command,
+    )
+
+
 @dag(
     start_date=datetime.datetime(2024, 11, 13),
     schedule="@daily",
@@ -423,6 +476,19 @@ def vinty_analytics_pipeline():
 
         create_rebag_stg_models >> create_rebag_inc_models
 
+    with TaskGroup("dct_transform_tasks") as dct_transform_tasks:
+        create_dct_stg_models = create_dct_stg_models_task()
+        create_dct_inc_models = create_dct_inc_models_task()
+
+        create_dct_stg_models >> create_dct_inc_models
+
+    with TaskGroup("treasures_transform_tasks") as treasures_transform_tasks:
+        create_treasures_stg_models = create_treasures_stg_models_task()
+        create_treasures_inc_models = create_treasures_inc_models_task()
+
+        create_treasures_stg_models >> create_treasures_inc_models
+
+    end_transformations = EmptyOperator(task_id="end_transformations")
     end = EmptyOperator(task_id="end")
 
     (
@@ -438,7 +504,11 @@ def vinty_analytics_pipeline():
         >> [
             vsp_transform_tasks,
             rebag_transform_tasks,
+            dct_transform_tasks,
+            treasures_transform_tasks,
         ]
+        >> create_sold_products_model
+        >> end_transformations
         >> end
     )
 
