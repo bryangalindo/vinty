@@ -1,0 +1,5 @@
+sources:
+  - name: dct
+    tables:
+      - name: dev_products
+      - name:  products
