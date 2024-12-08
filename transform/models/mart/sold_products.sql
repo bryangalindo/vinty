@@ -1,8 +1,8 @@
 {% set tables = [
-        ref('inc_vsp__products'),
-        ref('inc_rebag__products'),
-        ref('inc_dct__products'),
-        ref('inc_treasures__products')] %}
+        ref('inc_vsp__sold_products'),
+        ref('inc_rebag__sold_products'),
+        ref('inc_dct__sold_products'),
+        ref('inc_treasures__sold_products')] %}
 
 {% for table in tables %}
     select
