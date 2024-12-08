@@ -310,7 +310,7 @@ def create_vsp_inc_models_task():
         f'"YESTERDAY": "{AIRFLOW_PREVIOUS_EXECUTION_DATE}"}}"'
     )
     return BashOperator(
-        task_id="create_stg_models",
+        task_id="create_inc_models",
         bash_command=command,
     )
 
@@ -409,19 +409,19 @@ def vinty_analytics_pipeline():
         )
 
     join_ingestion_tasks = EmptyOperator(task_id="join_ingestion_tasks")
+    start_transformations = EmptyOperator(task_id="start_transformations")
 
-    with TaskGroup("transform_tasks") as transform_tasks:
-        with TaskGroup("vsp_transform_tasks"):
-            create_vsp_stg_models = create_vsp_stg_models_task()
-            create_vsp_inc_models = create_vsp_inc_models_task()
+    with TaskGroup("vsp_transform_tasks") as vsp_transform_tasks:
+        create_vsp_stg_models = create_vsp_stg_models_task()
+        create_vsp_inc_models = create_vsp_inc_models_task()
 
-            create_vsp_stg_models >> create_vsp_inc_models
+        create_vsp_stg_models >> create_vsp_inc_models
 
-        with TaskGroup("rebag_transform_tasks"):
-            create_rebag_stg_models = create_rebag_stg_models_task()
-            create_rebag_inc_models = create_rebag_inc_models_task()
+    with TaskGroup("rebag_transform_tasks") as rebag_transform_tasks:
+        create_rebag_stg_models = create_rebag_stg_models_task()
+        create_rebag_inc_models = create_rebag_inc_models_task()
 
-            create_rebag_stg_models >> create_rebag_inc_models
+        create_rebag_stg_models >> create_rebag_inc_models
 
     end = EmptyOperator(task_id="end")
 
@@ -434,7 +434,11 @@ def vinty_analytics_pipeline():
             treasures_ingestion_tasks,
         ]
         >> join_ingestion_tasks
-        >> transform_tasks
+        >> start_transformations
+        >> [
+            vsp_transform_tasks,
+            rebag_transform_tasks,
+        ]
         >> end
     )
 
