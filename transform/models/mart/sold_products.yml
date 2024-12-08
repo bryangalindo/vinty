@@ -1,0 +1,18 @@
+models:
+  - name: sold_products
+    columns:
+      - name: title
+        tests:
+          - not_null
+      - name: vendor
+        tests:
+          - not_null
+      - name: product_type
+        tests:
+          - not_null
+      - name: price
+        tests:
+          - not_null
+      - name: days_on_market
+        tests:
+          - not_null
