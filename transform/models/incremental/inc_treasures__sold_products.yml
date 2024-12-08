@@ -1,0 +1,21 @@
+models:
+  - name: inc_treasures__sold_products
+    columns:
+      - name: sold_date
+        tests:
+          - not_null
+      - name: vendor
+        tests:
+          - not_null
+      - name: product_type
+        tests:
+          - not_null
+      - name: id
+        tests:
+          - not_null
+      - name: price
+        tests:
+          - not_null
+      - name: days_on_market
+        tests:
+          - not_null
