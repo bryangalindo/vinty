@@ -342,6 +342,7 @@ def create_dct_stg_models_task():
     command += f"&& dbt build -s stg_dct__products --target {DBT_TARGET}"
     return BashOperator(
         task_id="create_stg_models",
+        start_date=datetime.datetime(2024, 12, 8),
         bash_command=command,
     )
 
@@ -355,6 +356,7 @@ def create_dct_inc_models_task():
     )
     return BashOperator(
         task_id="create_inc_models",
+        start_date = datetime.datetime(2024, 12, 8),
         bash_command=command,
     )
 
@@ -364,6 +366,7 @@ def create_treasures_stg_models_task():
     command += f"&& dbt build -s stg_treasures__products --target {DBT_TARGET}"
     return BashOperator(
         task_id="create_stg_models",
+        start_date=datetime.datetime(2024, 12, 8),
         bash_command=command,
     )
 
@@ -377,6 +380,7 @@ def create_treasures_inc_models_task():
     )
     return BashOperator(
         task_id="create_inc_models",
+        start_date=datetime.datetime(2024, 12, 8),
         bash_command=command,
     )
 
@@ -386,6 +390,7 @@ def create_sold_products_model_task():
     command += f"&& dbt build -s sold_products --target {DBT_TARGET}"
     return BashOperator(
         task_id="create_sold_products_model",
+        start_date=datetime.datetime(2024, 12, 8),
         bash_command=command,
     )
 
