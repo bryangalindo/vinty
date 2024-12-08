@@ -361,7 +361,7 @@ def create_dct_inc_models_task():
 
 def create_treasures_stg_models_task():
     command = build_dbt_bash_command_prefix()
-    command += f"&& dbt build -s stg_dct__products --target {DBT_TARGET}"
+    command += f"&& dbt build -s stg_treasures__products --target {DBT_TARGET}"
     return BashOperator(
         task_id="create_stg_models",
         bash_command=command,
@@ -371,7 +371,7 @@ def create_treasures_stg_models_task():
 def create_treasures_inc_models_task():
     command = build_dbt_bash_command_prefix()
     command += (
-        f"&& dbt build -s inc_dct__sold_products --target {DBT_TARGET} "
+        f"&& dbt build -s inc_treasures__sold_products --target {DBT_TARGET} "
         f'--vars "{{"TODAY": "{AIRFLOW_EXECUTION_DATE}", '
         f'"YESTERDAY": "{AIRFLOW_PREVIOUS_EXECUTION_DATE}"}}"'
     )
@@ -381,7 +381,7 @@ def create_treasures_inc_models_task():
     )
 
 
-def create_sold_products_model():
+def create_sold_products_model_task():
     command = build_dbt_bash_command_prefix()
     command += f"&& dbt build -s sold_products --target {DBT_TARGET}"
     return BashOperator(
@@ -401,92 +401,96 @@ def create_sold_products_model():
 def vinty_analytics_pipeline():
     start = EmptyOperator(task_id="start")
 
-    with TaskGroup("vsp_ingestion_tasks") as vsp_ingestion_tasks:
-        delete_duplicate_base_data = delete_vsp_duplicate_base_data_task()
-        convert_raw_data_to_base_data = convert_vsp_raw_data_to_base_data_task()
-        create_products_table = create_vsp_products_table_task()
-        delete_duplicate_product_rows = delete_vsp_duplicate_product_rows_task()
-        add_new_products = add_new_vsp_products_task()
+    with TaskGroup('ingestion_tasks'):
+        with TaskGroup("vsp") as vsp_ingestion_tasks:
+            delete_duplicate_base_data = delete_vsp_duplicate_base_data_task()
+            convert_raw_data_to_base_data = convert_vsp_raw_data_to_base_data_task()
+            create_products_table = create_vsp_products_table_task()
+            delete_duplicate_product_rows = delete_vsp_duplicate_product_rows_task()
+            add_new_products = add_new_vsp_products_task()
 
-        (
-            delete_duplicate_base_data
-            >> convert_raw_data_to_base_data
-            >> create_products_table
-            >> delete_duplicate_product_rows
-            >> add_new_products
-        )
+            (
+                delete_duplicate_base_data
+                >> convert_raw_data_to_base_data
+                >> create_products_table
+                >> delete_duplicate_product_rows
+                >> add_new_products
+            )
 
-    with TaskGroup("rebag_ingestion_tasks") as rebag_ingestion_tasks:
-        delete_duplicate_base_data = delete_rebag_duplicate_base_data_task()
-        convert_raw_data_to_base_data = convert_rebag_raw_data_to_base_data_task()
-        create_products_table = create_rebag_products_table_task()
-        delete_duplicate_product_rows = delete_rebag_duplicate_product_rows_task()
-        add_new_products = add_new_rebag_products_task()
+        with TaskGroup("rebag") as rebag_ingestion_tasks:
+            delete_duplicate_base_data = delete_rebag_duplicate_base_data_task()
+            convert_raw_data_to_base_data = convert_rebag_raw_data_to_base_data_task()
+            create_products_table = create_rebag_products_table_task()
+            delete_duplicate_product_rows = delete_rebag_duplicate_product_rows_task()
+            add_new_products = add_new_rebag_products_task()
 
-        (
-            delete_duplicate_base_data
-            >> convert_raw_data_to_base_data
-            >> create_products_table
-            >> delete_duplicate_product_rows
-            >> add_new_products
-        )
+            (
+                delete_duplicate_base_data
+                >> convert_raw_data_to_base_data
+                >> create_products_table
+                >> delete_duplicate_product_rows
+                >> add_new_products
+            )
 
-    with TaskGroup("dct_ingestion_tasks") as dct_ingestion_tasks:
-        delete_duplicate_base_data = delete_dct_duplicate_base_data_task()
-        convert_raw_data_to_base_data = convert_dct_raw_data_to_base_data_task()
-        create_products_table = create_dct_products_table_task()
-        delete_duplicate_product_rows = delete_dct_duplicate_product_rows_task()
-        add_new_products = add_new_dct_products_task()
+        with TaskGroup("dct") as dct_ingestion_tasks:
+            delete_duplicate_base_data = delete_dct_duplicate_base_data_task()
+            convert_raw_data_to_base_data = convert_dct_raw_data_to_base_data_task()
+            create_products_table = create_dct_products_table_task()
+            delete_duplicate_product_rows = delete_dct_duplicate_product_rows_task()
+            add_new_products = add_new_dct_products_task()
 
-        (
-            delete_duplicate_base_data
-            >> convert_raw_data_to_base_data
-            >> create_products_table
-            >> delete_duplicate_product_rows
-            >> add_new_products
-        )
+            (
+                delete_duplicate_base_data
+                >> convert_raw_data_to_base_data
+                >> create_products_table
+                >> delete_duplicate_product_rows
+                >> add_new_products
+            )
 
-    with TaskGroup("treasures_ingestion_tasks") as treasures_ingestion_tasks:
-        delete_duplicate_base_data = delete_treasures_duplicate_base_data_task()
-        convert_raw_data_to_base_data = convert_treasures_raw_data_to_base_data_task()
-        create_products_table = create_treasures_products_table_task()
-        delete_duplicate_product_rows = delete_treasures_duplicate_product_rows_task()
-        add_new_products = add_new_treasures_products_task()
+        with TaskGroup("treasures") as treasures_ingestion_tasks:
+            delete_duplicate_base_data = delete_treasures_duplicate_base_data_task()
+            convert_raw_data_to_base_data = convert_treasures_raw_data_to_base_data_task()
+            create_products_table = create_treasures_products_table_task()
+            delete_duplicate_product_rows = delete_treasures_duplicate_product_rows_task()
+            add_new_products = add_new_treasures_products_task()
 
-        (
-            delete_duplicate_base_data
-            >> convert_raw_data_to_base_data
-            >> create_products_table
-            >> delete_duplicate_product_rows
-            >> add_new_products
-        )
+            (
+                delete_duplicate_base_data
+                >> convert_raw_data_to_base_data
+                >> create_products_table
+                >> delete_duplicate_product_rows
+                >> add_new_products
+            )
 
     join_ingestion_tasks = EmptyOperator(task_id="join_ingestion_tasks")
     start_transformations = EmptyOperator(task_id="start_transformations")
 
-    with TaskGroup("vsp_transform_tasks") as vsp_transform_tasks:
-        create_vsp_stg_models = create_vsp_stg_models_task()
-        create_vsp_inc_models = create_vsp_inc_models_task()
+    with TaskGroup('transformation_tasks'):
+        with TaskGroup("vsp") as vsp_transform_tasks:
+            create_vsp_stg_models = create_vsp_stg_models_task()
+            create_vsp_inc_models = create_vsp_inc_models_task()
 
-        create_vsp_stg_models >> create_vsp_inc_models
+            create_vsp_stg_models >> create_vsp_inc_models
 
-    with TaskGroup("rebag_transform_tasks") as rebag_transform_tasks:
-        create_rebag_stg_models = create_rebag_stg_models_task()
-        create_rebag_inc_models = create_rebag_inc_models_task()
+        with TaskGroup("rebag") as rebag_transform_tasks:
+            create_rebag_stg_models = create_rebag_stg_models_task()
+            create_rebag_inc_models = create_rebag_inc_models_task()
 
-        create_rebag_stg_models >> create_rebag_inc_models
+            create_rebag_stg_models >> create_rebag_inc_models
 
-    with TaskGroup("dct_transform_tasks") as dct_transform_tasks:
-        create_dct_stg_models = create_dct_stg_models_task()
-        create_dct_inc_models = create_dct_inc_models_task()
+        with TaskGroup("dct") as dct_transform_tasks:
+            create_dct_stg_models = create_dct_stg_models_task()
+            create_dct_inc_models = create_dct_inc_models_task()
 
-        create_dct_stg_models >> create_dct_inc_models
+            create_dct_stg_models >> create_dct_inc_models
 
-    with TaskGroup("treasures_transform_tasks") as treasures_transform_tasks:
-        create_treasures_stg_models = create_treasures_stg_models_task()
-        create_treasures_inc_models = create_treasures_inc_models_task()
+        with TaskGroup("treasures") as treasures_transform_tasks:
+            create_treasures_stg_models = create_treasures_stg_models_task()
+            create_treasures_inc_models = create_treasures_inc_models_task()
 
-        create_treasures_stg_models >> create_treasures_inc_models
+            create_treasures_stg_models >> create_treasures_inc_models
+
+        create_sold_products_model = create_sold_products_model_task()
 
     end_transformations = EmptyOperator(task_id="end_transformations")
     end = EmptyOperator(task_id="end")
