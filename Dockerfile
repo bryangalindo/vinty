@@ -1,7 +1,5 @@
 FROM quay.io/astronomer/astro-runtime:12.5.0
 
-USER $AIRFLOW_UID
-
 WORKDIR /usr/local/airflow
 
 COPY dbt-requirements.txt ./
