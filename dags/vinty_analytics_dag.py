@@ -462,7 +462,10 @@ def vinty_analytics_pipeline():
                 >> add_new_products
             )
 
-    join_ingestion_tasks = EmptyOperator(task_id="join_ingestion_tasks")
+    join_ingestion_tasks = EmptyOperator(
+        task_id="join_ingestion_tasks",
+        trigger_rule="all_done",
+    )
     start_transformations = EmptyOperator(task_id="start_transformations")
 
     with TaskGroup('transformation_tasks'):
