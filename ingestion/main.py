@@ -166,7 +166,7 @@ def main():
     base_url = cfg.SHOPIFY_PRODUCTS_URL
 
     if check_trigger_file(AWS_S3_CLIENT, cfg.AWS_S3_BUCKET_NAME, AWS_S3_ROOT_FOLDER):
-        log.info(f'Exiting script since data was probably prior downloaded...')
+        log.info(f'Exiting script since data was probably prior scraped + persisted...')
         return
 
     count = fetch_total_product_count(product_count_url)
