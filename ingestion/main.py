@@ -60,6 +60,53 @@ def fetch_product_data_from_url(url: str) -> dict:
     return r.json()
 
 
+def create_empty_trigger_file_locally() -> str:
+    """Creates an empty trigger.txt file locally."""
+    file_path = "trigger.txt"
+    with open(file_path, "w") as f:
+        pass  # Create an empty file
+    log.info(f"Successfully created an empty trigger file at {file_path=}")
+    return file_path
+
+
+def create_empty_trigger_file_s3(s3_client, bucket_name, s3_key):
+    """Creates an empty trigger.txt file in S3."""
+    try:
+        upload_path = f"s3://{bucket_name}/{s3_key}"
+        log.info(f"Starting to upload an empty trigger file to {upload_path}...")
+        s3_client.put_object(Bucket=bucket_name, Key=s3_key, Body="")
+        log.info(f"Successfully uploaded an empty trigger file to {upload_path}")
+        return upload_path
+    except (NoCredentialsError, PartialCredentialsError):
+        log.error("Error: AWS credentials not found or are incomplete.")
+    except ClientError as e:
+        log.error(f"Error occurred while uploading to S3: {e}")
+    except Exception as e:
+        log.error(f"An unexpected error occurred: {e=}, tb={traceback.format_exc()}")
+
+
+@retry(max_retries=5, initial_delay=1, max_delay=60)
+def create_empty_trigger_file_remotely() -> str:
+    """Creates an empty trigger.txt file in a remote store (e.g., S3)."""
+    s3_client = AWS_S3_CLIENT
+    bucket_name = cfg.AWS_S3_BUCKET_NAME
+    s3_key = f"{AWS_S3_ROOT_FOLDER}/trigger.txt"
+
+    upload_path = create_empty_trigger_file_s3(s3_client, bucket_name, s3_key)
+    return upload_path
+
+
+def create_trigger_file():
+    """Creates an empty trigger.txt file, either locally or remotely based on environment."""
+    file_path = None
+    with Timer("Total time taken to create trigger file", unit="milliseconds"):
+        if cfg.ENV.lower() == "dev":
+            file_path = create_empty_trigger_file_locally()
+        elif cfg.ENV.lower() == "prod":
+            file_path = create_empty_trigger_file_remotely()
+    return file_path
+
+
 def save_json_to_local_file(data: dict) -> str:
     file_path = None
     with tempfile.NamedTemporaryFile(delete=False, suffix=".json", mode="w") as f:
@@ -103,9 +150,9 @@ def save_json_to_remote_store(data: dict) -> str:
 def save_json_data_to_file(data: dict):
     file_path = None
     with Timer("Total time taken to save JSON data", unit="milliseconds"):
-        if cfg.ENV == "local":
+        if cfg.ENV.lower() == "dev":
             file_path = save_json_to_local_file(data)
-        elif cfg.ENV == "prod":
+        elif cfg.ENV.lower() == "prod":
             file_path = save_json_to_remote_store(data)
     return file_path
 
@@ -136,6 +183,8 @@ def main():
         except Exception as e:
             log.error(f"Failed to scrape {url=}, {e=}, {traceback.format_exc()}")
             exception_count += 1
+
+    create_trigger_file()
 
     log.info(f"Successfully finished ingesting {processed_urls_count=}, exiting.")
 
