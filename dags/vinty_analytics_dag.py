@@ -5,8 +5,7 @@ import os
 from airflow.decorators import dag
 from airflow.models import Variable
 from airflow.operators.bash import BashOperator
-from airflow.operators.empty import EmptyOperator
-from airflow.operators.python import PythonOperator
+from airflow.operators.python import PythonOperator, ShortCircuitOperator
 from airflow.utils.task_group import TaskGroup
 
 from include.scripts import (
@@ -47,7 +46,23 @@ ICEBERG_REBAG_STORE_DB = "rebag"
 ICEBERG_CATALOG = "vinty"
 ICEBERG_DCT_STORE_DB = "dct"
 
+DCT_START_DATE = datetime.datetime(2024, 12, 8)
+TREASURES_START_DATE = datetime.datetime(2024, 12, 8)
 DBT_TARGET = ENV.lower()
+
+
+def should_run_taskgroup(start_date, **kwargs):
+    run_date = kwargs["ds"]
+    start_date = start_date.strftime("%Y-%m-%d")
+    return run_date >= start_date
+
+
+def skip_if_future_start_date_task(start_date):
+    return ShortCircuitOperator(
+        task_id="skip_if_future_start_date",
+        python_callable=should_run_taskgroup,
+        op_kwargs={"start_date": start_date},
+    )
 
 
 def delete_vsp_duplicate_base_data_task():
@@ -161,7 +176,7 @@ def add_new_rebag_products_task():
 def delete_dct_duplicate_base_data_task():
     return PythonOperator(
         task_id="delete_duplicate_base_data",
-        start_date=datetime.datetime(2024, 12, 8),
+        start_date=DCT_TREASURES_START_DATE,
         python_callable=delete_duplicate_base_data.main,
         op_args=(
             ICEBERG_DCT_STORE_DB,
@@ -356,7 +371,7 @@ def create_dct_inc_models_task():
     )
     return BashOperator(
         task_id="create_inc_models",
-        start_date = datetime.datetime(2024, 12, 8),
+        start_date=datetime.datetime(2024, 12, 8),
         bash_command=command,
     )
 
@@ -404,9 +419,8 @@ def create_sold_products_model_task():
     tags=["ingestion"],
 )
 def vinty_analytics_pipeline():
-    start = EmptyOperator(task_id="start")
 
-    with TaskGroup('ingestion_tasks'):
+    with TaskGroup("ingestion_tasks") as ingestion_tasks:
         with TaskGroup("vsp") as vsp_ingestion_tasks:
             delete_duplicate_base_data = delete_vsp_duplicate_base_data_task()
             convert_raw_data_to_base_data = convert_vsp_raw_data_to_base_data_task()
@@ -438,6 +452,7 @@ def vinty_analytics_pipeline():
             )
 
         with TaskGroup("dct") as dct_ingestion_tasks:
+            short_circuit = skip_if_future_start_date_task(DCT_START_DATE)
             delete_duplicate_base_data = delete_dct_duplicate_base_data_task()
             convert_raw_data_to_base_data = convert_dct_raw_data_to_base_data_task()
             create_products_table = create_dct_products_table_task()
@@ -445,7 +460,8 @@ def vinty_analytics_pipeline():
             add_new_products = add_new_dct_products_task()
 
             (
-                delete_duplicate_base_data
+                short_circuit
+                >> delete_duplicate_base_data
                 >> convert_raw_data_to_base_data
                 >> create_products_table
                 >> delete_duplicate_product_rows
@@ -453,27 +469,27 @@ def vinty_analytics_pipeline():
             )
 
         with TaskGroup("treasures") as treasures_ingestion_tasks:
+            short_circuit = skip_if_future_start_date_task(TREASURES_START_DATE)
             delete_duplicate_base_data = delete_treasures_duplicate_base_data_task()
-            convert_raw_data_to_base_data = convert_treasures_raw_data_to_base_data_task()
+            convert_raw_data_to_base_data = (
+                convert_treasures_raw_data_to_base_data_task()
+            )
             create_products_table = create_treasures_products_table_task()
-            delete_duplicate_product_rows = delete_treasures_duplicate_product_rows_task()
+            delete_duplicate_product_rows = (
+                delete_treasures_duplicate_product_rows_task()
+            )
             add_new_products = add_new_treasures_products_task()
 
             (
-                delete_duplicate_base_data
+                short_circuit
+                >> delete_duplicate_base_data
                 >> convert_raw_data_to_base_data
                 >> create_products_table
                 >> delete_duplicate_product_rows
                 >> add_new_products
             )
 
-    join_ingestion_tasks = EmptyOperator(
-        task_id="join_ingestion_tasks",
-        trigger_rule="all_done",
-    )
-    start_transformations = EmptyOperator(task_id="start_transformations")
-
-    with TaskGroup('transformation_tasks'):
+    with TaskGroup("transformation_tasks"):
         with TaskGroup("vsp") as vsp_transform_tasks:
             create_vsp_stg_models = create_vsp_stg_models_task()
             create_vsp_inc_models = create_vsp_inc_models_task()
@@ -498,30 +514,11 @@ def vinty_analytics_pipeline():
 
             create_treasures_stg_models >> create_treasures_inc_models
 
-        create_sold_products_model = create_sold_products_model_task()
-
-    end_transformations = EmptyOperator(task_id="end_transformations")
-    end = EmptyOperator(task_id="end")
-
     (
-        start
-        >> [
-            vsp_ingestion_tasks,
-            rebag_ingestion_tasks,
-            dct_ingestion_tasks,
-            treasures_ingestion_tasks,
-        ]
-        >> join_ingestion_tasks
-        >> start_transformations
-        >> [
-            vsp_transform_tasks,
-            rebag_transform_tasks,
-            dct_transform_tasks,
-            treasures_transform_tasks,
-        ]
-        >> create_sold_products_model
-        >> end_transformations
-        >> end
+        vsp_ingestion_tasks >> vsp_transform_tasks,
+        rebag_ingestion_tasks >> rebag_transform_tasks,
+        dct_ingestion_tasks >> dct_transform_tasks,
+        treasures_ingestion_tasks >> treasures_transform_tasks,
     )
 
 
