@@ -87,7 +87,7 @@ def check_trigger_file(client, bucket_name, root_folder):
         log.info(f"Found trigger file in {bucket_name=}, {key=}")
         return True
     except client.exceptions.ClientError as e:
-        if e.response['Error']['Code'] == "404":
+        if e.response["Error"]["Code"] == "404":
             log.info("Trigger file does not exist")
             return False
         else:

@@ -10,7 +10,13 @@ import config as cfg
 import requests
 from botocore.exceptions import ClientError, NoCredentialsError, PartialCredentialsError
 from logger import get_logger
-from utils import Timer, generate_headers, retry, sleep_for_random_n_seconds, check_trigger_file
+from utils import (
+    Timer,
+    check_trigger_file,
+    generate_headers,
+    retry,
+    sleep_for_random_n_seconds,
+)
 
 log = get_logger(__name__)
 
@@ -166,7 +172,7 @@ def main():
     base_url = cfg.SHOPIFY_PRODUCTS_URL
 
     if check_trigger_file(AWS_S3_CLIENT, cfg.AWS_S3_BUCKET_NAME, AWS_S3_ROOT_FOLDER):
-        log.info(f'Exiting script since data was probably prior scraped + persisted...')
+        log.info(f"Exiting script since data was probably prior scraped + persisted...")
         return
 
     count = fetch_total_product_count(product_count_url)
