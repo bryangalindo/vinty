@@ -10,7 +10,7 @@ import config as cfg
 import requests
 from botocore.exceptions import ClientError, NoCredentialsError, PartialCredentialsError
 from logger import get_logger
-from utils import Timer, generate_headers, retry, sleep_for_random_n_seconds
+from utils import Timer, generate_headers, retry, sleep_for_random_n_seconds, check_trigger_file
 
 log = get_logger(__name__)
 
@@ -64,7 +64,7 @@ def create_empty_trigger_file_locally() -> str:
     """Creates an empty trigger.txt file locally."""
     file_path = "trigger.txt"
     with open(file_path, "w") as f:
-        pass  # Create an empty file
+        pass
     log.info(f"Successfully created an empty trigger file at {file_path=}")
     return file_path
 
@@ -164,6 +164,10 @@ def main():
 
     product_count_url = cfg.SHOPIFY_PRODUCT_COUNT_URL
     base_url = cfg.SHOPIFY_PRODUCTS_URL
+
+    if check_trigger_file(AWS_S3_CLIENT, cfg.AWS_S3_BUCKET_NAME, AWS_S3_ROOT_FOLDER):
+        log.info(f'Exiting script since data was probably prior downloaded...')
+        return
 
     count = fetch_total_product_count(product_count_url)
     urls = generate_scraping_urls(base_url, count)

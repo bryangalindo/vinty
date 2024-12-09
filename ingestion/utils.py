@@ -1,6 +1,7 @@
 import functools
 import random
 
+from botocore.exceptions import NoCredentialsError, PartialCredentialsError
 from constants import HEADERS, USER_AGENTS
 from logger import get_logger
 
@@ -77,3 +78,21 @@ class Timer:
             unit_str = "seconds"
 
         log.info(f"{self.message} time_elapsed_{unit_str}={elapsed_time:.2f}")
+
+
+def check_trigger_file(client, bucket_name, root_folder):
+    try:
+        key = f"{root_folder}/trigger.txt"
+        client.head_object(Bucket=bucket_name, Key=key)
+        log.info(f"Found trigger file in {bucket_name=}, {key=}")
+        return True
+    except client.exceptions.ClientError as e:
+        if e.response['Error']['Code'] == "404":
+            log.info("Trigger file does not exist")
+            return False
+        else:
+            log.error(f"Failed to get trigger file, {e=}")
+            raise
+    except (NoCredentialsError, PartialCredentialsError):
+        log.error("AWS credentials not found or incomplete.")
+        raise
