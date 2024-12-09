@@ -176,7 +176,7 @@ def add_new_rebag_products_task():
 def delete_dct_duplicate_base_data_task():
     return PythonOperator(
         task_id="delete_duplicate_base_data",
-        start_date=DCT_TREASURES_START_DATE,
+        start_date=DCT_START_DATE,
         python_callable=delete_duplicate_base_data.main,
         op_args=(
             ICEBERG_DCT_STORE_DB,
@@ -189,7 +189,7 @@ def delete_dct_duplicate_base_data_task():
 def convert_dct_raw_data_to_base_data_task():
     return PythonOperator(
         task_id="convert_raw_to_base",
-        start_date=datetime.datetime(2024, 12, 8),
+        start_date=DCT_START_DATE,
         python_callable=convert_raw_to_base_data.main,
         op_args=(
             ICEBERG_DCT_STORE_DB,
@@ -203,7 +203,7 @@ def convert_dct_raw_data_to_base_data_task():
 def create_dct_products_table_task():
     return PythonOperator(
         task_id="create_products_table",
-        start_date=datetime.datetime(2024, 12, 8),
+        start_date=DCT_START_DATE,
         python_callable=create_products_table.main,
         op_args=(
             ICEBERG_DCT_STORE_DB,
@@ -215,7 +215,7 @@ def create_dct_products_table_task():
 def delete_dct_duplicate_product_rows_task():
     return PythonOperator(
         task_id="delete_duplicate_product_rows",
-        start_date=datetime.datetime(2024, 12, 8),
+        start_date=DCT_START_DATE,
         python_callable=delete_duplicate_product_rows.main,
         op_args=(
             ICEBERG_DCT_STORE_DB,
@@ -227,7 +227,7 @@ def delete_dct_duplicate_product_rows_task():
 def add_new_dct_products_task():
     return PythonOperator(
         task_id="add_new_products",
-        start_date=datetime.datetime(2024, 12, 8),
+        start_date=DCT_START_DATE,
         python_callable=add_new_products.main,
         op_args=(
             ICEBERG_DCT_STORE_DB,
@@ -239,7 +239,7 @@ def add_new_dct_products_task():
 def delete_treasures_duplicate_base_data_task():
     return PythonOperator(
         task_id="delete_duplicate_base_data",
-        start_date=datetime.datetime(2024, 12, 8),
+        start_date=TREASURES_START_DATE,
         python_callable=delete_duplicate_base_data.main,
         op_args=(
             ICEBERG_TREASURES_STORE_DB,
@@ -252,7 +252,7 @@ def delete_treasures_duplicate_base_data_task():
 def convert_treasures_raw_data_to_base_data_task():
     return PythonOperator(
         task_id="convert_raw_to_base",
-        start_date=datetime.datetime(2024, 12, 8),
+        start_date=TREASURES_START_DATE,
         python_callable=convert_raw_to_base_data.main,
         op_args=(
             ICEBERG_TREASURES_STORE_DB,
@@ -266,7 +266,7 @@ def convert_treasures_raw_data_to_base_data_task():
 def create_treasures_products_table_task():
     return PythonOperator(
         task_id="create_products_table",
-        start_date=datetime.datetime(2024, 12, 8),
+        start_date=TREASURES_START_DATE,
         python_callable=create_products_table.main,
         op_args=(
             ICEBERG_TREASURES_STORE_DB,
@@ -278,7 +278,7 @@ def create_treasures_products_table_task():
 def delete_treasures_duplicate_product_rows_task():
     return PythonOperator(
         task_id="delete_duplicate_product_rows",
-        start_date=datetime.datetime(2024, 12, 8),
+        start_date=TREASURES_START_DATE,
         python_callable=delete_duplicate_product_rows.main,
         op_args=(
             ICEBERG_TREASURES_STORE_DB,
@@ -290,7 +290,7 @@ def delete_treasures_duplicate_product_rows_task():
 def add_new_treasures_products_task():
     return PythonOperator(
         task_id="add_new_products",
-        start_date=datetime.datetime(2024, 12, 8),
+        start_date=TREASURES_START_DATE,
         python_callable=add_new_products.main,
         op_args=(
             ICEBERG_TREASURES_STORE_DB,
@@ -357,7 +357,7 @@ def create_dct_stg_models_task():
     command += f"&& dbt build -s stg_dct__products --target {DBT_TARGET}"
     return BashOperator(
         task_id="create_stg_models",
-        start_date=datetime.datetime(2024, 12, 8),
+        start_date=DCT_START_DATE,
         bash_command=command,
     )
 
@@ -371,7 +371,7 @@ def create_dct_inc_models_task():
     )
     return BashOperator(
         task_id="create_inc_models",
-        start_date=datetime.datetime(2024, 12, 8),
+        start_date=DCT_START_DATE,
         bash_command=command,
     )
 
@@ -381,7 +381,7 @@ def create_treasures_stg_models_task():
     command += f"&& dbt build -s stg_treasures__products --target {DBT_TARGET}"
     return BashOperator(
         task_id="create_stg_models",
-        start_date=datetime.datetime(2024, 12, 8),
+        start_date=TREASURES_START_DATE,
         bash_command=command,
     )
 
@@ -395,7 +395,7 @@ def create_treasures_inc_models_task():
     )
     return BashOperator(
         task_id="create_inc_models",
-        start_date=datetime.datetime(2024, 12, 8),
+        start_date=TREASURES_START_DATE,
         bash_command=command,
     )
 
