@@ -6,6 +6,7 @@ from airflow.decorators import dag
 from airflow.models import Variable
 from airflow.operators.bash import BashOperator
 from airflow.operators.python import PythonOperator, ShortCircuitOperator
+from airflow.providers.amazon.aws.sensors.s3 import S3KeySensor
 from airflow.utils.task_group import TaskGroup
 
 from include.scripts import (
@@ -18,7 +19,9 @@ from include.scripts import (
 
 log = logging.getLogger(__name__)
 
-AWS_S3_BUCKET_NAME = os.getenv("AWS_S3_BUCKET_NAME", Variable.get("AWS_S3_BUCKET_NAME"))
+AWS_S3_RAW_DATA_BUCKET_NAME = os.getenv(
+    "AWS_S3_BUCKET_NAME", Variable.get("AWS_S3_BUCKET_NAME")
+)
 AWS_S3_BASE_DATA_BUCKET_NAME = os.getenv(
     "AWS_S3_BASE_DATA_BUCKET_NAME", Variable.get("AWS_S3_BASE_DATA_BUCKET_NAME")
 )
@@ -35,6 +38,7 @@ ENV = os.getenv("ENV", Variable.get("ENV"))
 AIRFLOW_HOME = os.environ["AIRFLOW_HOME"]
 AIRFLOW_EXECUTION_DATE = "{{ ds }}"
 AIRFLOW_PREVIOUS_EXECUTION_DATE = "{{ prev_ds }}"
+AIRFLOW_AWS_CONN_ID = "aws_default"
 
 os.environ["AWS_REGION"] = AWS_REGION
 os.environ["AWS_SECRET_ACCESS_KEY"] = AWS_SECRET_ACCESS_KEY
@@ -45,6 +49,9 @@ ICEBERG_VSP_STORE_DB = "vsp"
 ICEBERG_REBAG_STORE_DB = "rebag"
 ICEBERG_CATALOG = "vinty"
 ICEBERG_DCT_STORE_DB = "dct"
+
+FIVE_MINUTES = 60 * 5
+ONE_HOUR = 60 * 60
 
 DCT_START_DATE = datetime.datetime(2024, 12, 8)
 TREASURES_START_DATE = datetime.datetime(2024, 12, 8)
@@ -62,6 +69,23 @@ def skip_if_future_start_date_task(start_date):
         task_id="skip_if_future_start_date",
         python_callable=should_run_taskgroup,
         op_kwargs={"start_date": start_date},
+    )
+
+
+def wait_for_trigger_file_task(store: str):
+    return S3KeySensor(
+        task_id="wait_for_trigger_file",
+        bucket_key=(
+            store
+            + "/"
+            + "{{ ds.replace('-', '/').replace('/0', '/') }}"
+            + "/trigger.txt"
+        ),
+        bucket_name=AWS_S3_RAW_DATA_BUCKET_NAME,
+        aws_conn_id=AIRFLOW_AWS_CONN_ID,
+        poke_interval=FIVE_MINUTES,
+        timeout=ONE_HOUR,
+        mode="poke",
     )
 
 
@@ -87,7 +111,7 @@ def convert_vsp_raw_data_to_base_data_task():
         python_callable=convert_raw_to_base_data.main,
         op_args=(
             ICEBERG_VSP_STORE_DB,
-            AWS_S3_BUCKET_NAME,
+            AWS_S3_RAW_DATA_BUCKET_NAME,
             AWS_S3_BASE_DATA_BUCKET_NAME,
             "{{ ds }}",
         ),
@@ -100,7 +124,7 @@ def convert_rebag_raw_data_to_base_data_task():
         python_callable=convert_raw_to_base_data.main,
         op_args=(
             ICEBERG_REBAG_STORE_DB,
-            AWS_S3_BUCKET_NAME,
+            AWS_S3_RAW_DATA_BUCKET_NAME,
             AWS_S3_BASE_DATA_BUCKET_NAME,
             "{{ ds }}",
         ),
@@ -193,7 +217,7 @@ def convert_dct_raw_data_to_base_data_task():
         python_callable=convert_raw_to_base_data.main,
         op_args=(
             ICEBERG_DCT_STORE_DB,
-            AWS_S3_BUCKET_NAME,
+            AWS_S3_RAW_DATA_BUCKET_NAME,
             AWS_S3_BASE_DATA_BUCKET_NAME,
             "{{ ds }}",
         ),
@@ -256,7 +280,7 @@ def convert_treasures_raw_data_to_base_data_task():
         python_callable=convert_raw_to_base_data.main,
         op_args=(
             ICEBERG_TREASURES_STORE_DB,
-            AWS_S3_BUCKET_NAME,
+            AWS_S3_RAW_DATA_BUCKET_NAME,
             AWS_S3_BASE_DATA_BUCKET_NAME,
             "{{ ds }}",
         ),
@@ -419,9 +443,9 @@ def create_sold_products_model_task():
     tags=["ingestion"],
 )
 def vinty_analytics_pipeline():
-
-    with TaskGroup("ingestion_tasks") as ingestion_tasks:
+    with TaskGroup("ingestion_tasks"):
         with TaskGroup("vsp") as vsp_ingestion_tasks:
+            check_for_trigger_file = wait_for_trigger_file_task("vsp")
             delete_duplicate_base_data = delete_vsp_duplicate_base_data_task()
             convert_raw_data_to_base_data = convert_vsp_raw_data_to_base_data_task()
             create_products_table = create_vsp_products_table_task()
@@ -429,7 +453,8 @@ def vinty_analytics_pipeline():
             add_new_products = add_new_vsp_products_task()
 
             (
-                delete_duplicate_base_data
+                check_for_trigger_file
+                >> delete_duplicate_base_data
                 >> convert_raw_data_to_base_data
                 >> create_products_table
                 >> delete_duplicate_product_rows
@@ -437,6 +462,7 @@ def vinty_analytics_pipeline():
             )
 
         with TaskGroup("rebag") as rebag_ingestion_tasks:
+            check_for_trigger_file = wait_for_trigger_file_task("rebag")
             delete_duplicate_base_data = delete_rebag_duplicate_base_data_task()
             convert_raw_data_to_base_data = convert_rebag_raw_data_to_base_data_task()
             create_products_table = create_rebag_products_table_task()
@@ -444,7 +470,8 @@ def vinty_analytics_pipeline():
             add_new_products = add_new_rebag_products_task()
 
             (
-                delete_duplicate_base_data
+                check_for_trigger_file
+                >> delete_duplicate_base_data
                 >> convert_raw_data_to_base_data
                 >> create_products_table
                 >> delete_duplicate_product_rows
@@ -453,6 +480,7 @@ def vinty_analytics_pipeline():
 
         with TaskGroup("dct") as dct_ingestion_tasks:
             short_circuit = skip_if_future_start_date_task(DCT_START_DATE)
+            check_for_trigger_file = wait_for_trigger_file_task("dct")
             delete_duplicate_base_data = delete_dct_duplicate_base_data_task()
             convert_raw_data_to_base_data = convert_dct_raw_data_to_base_data_task()
             create_products_table = create_dct_products_table_task()
@@ -461,6 +489,7 @@ def vinty_analytics_pipeline():
 
             (
                 short_circuit
+                >> check_for_trigger_file
                 >> delete_duplicate_base_data
                 >> convert_raw_data_to_base_data
                 >> create_products_table
@@ -470,6 +499,7 @@ def vinty_analytics_pipeline():
 
         with TaskGroup("treasures") as treasures_ingestion_tasks:
             short_circuit = skip_if_future_start_date_task(TREASURES_START_DATE)
+            check_for_trigger_file = wait_for_trigger_file_task("treasures")
             delete_duplicate_base_data = delete_treasures_duplicate_base_data_task()
             convert_raw_data_to_base_data = (
                 convert_treasures_raw_data_to_base_data_task()
@@ -482,6 +512,7 @@ def vinty_analytics_pipeline():
 
             (
                 short_circuit
+                >> check_for_trigger_file
                 >> delete_duplicate_base_data
                 >> convert_raw_data_to_base_data
                 >> create_products_table
