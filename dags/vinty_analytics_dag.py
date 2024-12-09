@@ -443,7 +443,7 @@ def create_sold_products_model_task():
     tags=["ingestion"],
 )
 def vinty_analytics_pipeline():
-    with TaskGroup('pre_ingestion_tasks'):
+    with TaskGroup("pre_ingestion_tasks"):
         with TaskGroup("vsp") as vsp_pre_ingestion_tasks:
             wait_for_trigger_file_task("vsp")
 
@@ -501,7 +501,6 @@ def vinty_analytics_pipeline():
             add_new_products = add_new_dct_products_task()
 
             (
-
                 delete_duplicate_base_data
                 >> convert_raw_data_to_base_data
                 >> create_products_table
@@ -557,7 +556,9 @@ def vinty_analytics_pipeline():
         vsp_pre_ingestion_tasks >> vsp_ingestion_tasks >> vsp_transform_tasks,
         rebag_pre_ingestion_tasks >> rebag_ingestion_tasks >> rebag_transform_tasks,
         dct_pre_ingestion_tasks >> dct_ingestion_tasks >> dct_transform_tasks,
-        treasures_pre_ingestion_tasks >> treasures_ingestion_tasks >> treasures_transform_tasks,
+        treasures_pre_ingestion_tasks
+        >> treasures_ingestion_tasks
+        >> treasures_transform_tasks,
     )
 
 
