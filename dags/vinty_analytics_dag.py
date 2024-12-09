@@ -336,7 +336,7 @@ def create_vsp_stg_models_task():
     command = build_dbt_bash_command_prefix()
     command += f"&& dbt build -s stg_vsp__products --target {DBT_TARGET} "
     return BashOperator(
-        task_id="create_stg_models",
+        task_id="create_staging_models",
         bash_command=command,
     )
 
@@ -349,7 +349,7 @@ def create_vsp_inc_models_task():
         f'"YESTERDAY": "{AIRFLOW_PREVIOUS_EXECUTION_DATE}"}}"'
     )
     return BashOperator(
-        task_id="create_inc_models",
+        task_id="create_incremental_models",
         bash_command=command,
     )
 
@@ -358,7 +358,7 @@ def create_rebag_stg_models_task():
     command = build_dbt_bash_command_prefix()
     command += f"&& dbt build -s stg_rebag__products --target {DBT_TARGET}"
     return BashOperator(
-        task_id="create_stg_models",
+        task_id="create_staging_models",
         bash_command=command,
     )
 
@@ -371,7 +371,7 @@ def create_rebag_inc_models_task():
         f'"YESTERDAY": "{AIRFLOW_PREVIOUS_EXECUTION_DATE}"}}"'
     )
     return BashOperator(
-        task_id="create_inc_models",
+        task_id="create_incremental_models",
         bash_command=command,
     )
 
@@ -380,7 +380,7 @@ def create_dct_stg_models_task():
     command = build_dbt_bash_command_prefix()
     command += f"&& dbt build -s stg_dct__products --target {DBT_TARGET}"
     return BashOperator(
-        task_id="create_stg_models",
+        task_id="create_staging_models",
         start_date=DCT_START_DATE,
         bash_command=command,
     )
@@ -394,7 +394,7 @@ def create_dct_inc_models_task():
         f'"YESTERDAY": "{AIRFLOW_PREVIOUS_EXECUTION_DATE}"}}"'
     )
     return BashOperator(
-        task_id="create_inc_models",
+        task_id="create_incremental_models",
         start_date=DCT_START_DATE,
         bash_command=command,
     )
@@ -404,7 +404,7 @@ def create_treasures_stg_models_task():
     command = build_dbt_bash_command_prefix()
     command += f"&& dbt build -s stg_treasures__products --target {DBT_TARGET}"
     return BashOperator(
-        task_id="create_stg_models",
+        task_id="create_staging_models",
         start_date=TREASURES_START_DATE,
         bash_command=command,
     )
@@ -418,7 +418,7 @@ def create_treasures_inc_models_task():
         f'"YESTERDAY": "{AIRFLOW_PREVIOUS_EXECUTION_DATE}"}}"'
     )
     return BashOperator(
-        task_id="create_inc_models",
+        task_id="create_incremental_models",
         start_date=TREASURES_START_DATE,
         bash_command=command,
     )
