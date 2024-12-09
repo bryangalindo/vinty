@@ -2,33 +2,36 @@
 {% set yesterday = var("YESTERDAY") %}
 
 
-WITH today AS (
-    SELECT *
-    FROM {{ ref('stg_rebag__products') }}
-    WHERE ingestion_date = '{{ today }}'
-), yesterday AS (
-    SELECT *
-    FROM {{ ref('stg_rebag__products') }}
-    WHERE ingestion_date = '{{ yesterday }}'
-)
+with
+    today as (
+        select *
+        from {{ ref('stg_rebag__products') }}
+        where ingestion_date = '{{ today }}'
+    )
+    
+    , yesterday as (
+        select *
+        from {{ ref('stg_rebag__products') }}
+        where ingestion_date = '{{ yesterday }}'
+    )
 
 select
-    yday.id as id,
-    yday.vendor as vendor,
-    yday.title AS title,
-    yday.price AS price,
-    yday.condition AS condition,
-    yday.exterior_color AS exterior_color,
-    yday.product_type AS product_type,
-    yday.days_on_market AS days_on_market,
-    yday.store AS store,
-    '{{ today }}' AS sold_date
+    yday.id
+    , yday.vendor
+    , yday.title
+    , yday.price
+    , yday.condition
+    , yday.exterior_color
+    , yday.product_type
+    , yday.days_on_market
+    , yday.store
+    , '{{ today }}' as sold_date
 from
-    yesterday yday
-left join today tday
-on yday.id = tday.id
+    yesterday as yday
+left join today as tday
+    on yday.id = tday.id
 where tday.id is null
 
-{% if is_incremental() %}
-    and '{{ today }}' > (select COALESCE(max(sold_date), '1970-01-01') from {{ this }})
-{% endif %}
+    {% if is_incremental() %}
+        and '{{ today }}' > (select coalesce(max(sold_date), '1970-01-01') from {{ this }})
+    {% endif %}

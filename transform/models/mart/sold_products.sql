@@ -6,15 +6,15 @@
 
 {% for table in tables %}
     select
-        vendor,
-        title,
-        price,
-        days_on_market,
-        store,
-        sold_date
+        vendor
+        , title
+        , price
+        , days_on_market
+        , store
+        , sold_date
     from
         {{ table }}
     {% if not loop.last %}
-        UNION ALL
+        union all
     {% endif %}
 {% endfor %}
