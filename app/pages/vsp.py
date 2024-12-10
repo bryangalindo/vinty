@@ -136,9 +136,6 @@ def vsp_page():
         with col1b:
             title_search = st.text_input("Search by title (e.g., 'mama')", "")
 
-        with col2b:
-            color_search = st.text_input("Search by color (e.g., 'Brown')", "")
-
         filtered_df = df[
             (df["price"] >= price_min)
             & (df["price"] <= price_max)
