@@ -147,7 +147,6 @@ def rebag_page():
             & (df["sold_date"] >= pd.to_datetime(start_date))
             & (df["sold_date"] <= pd.to_datetime(end_date))
             & (df["title"].str.contains(title_search, case=False, na=False))
-            & (df["exterior_color"].str.contains(color_search, case=False, na=False))
         ]
 
         if vendor_selected != "All":
