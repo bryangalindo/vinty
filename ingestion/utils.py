@@ -21,7 +21,7 @@ def retry(max_retries=3, initial_delay=1, max_delay=32):
                 except Exception as e:
                     retries += 1
                     if retries == max_retries:
-                        print(f"Max retries reached. Function failed with error: {e}")
+                        log.info(f"Max retries reached. Function failed with error: {e}")
                         raise
 
                     jitter = random.uniform(0, delay)
