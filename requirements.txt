@@ -3,3 +3,4 @@ pandas
 pyspark
 pytest
 apache-airflow-providers-amazon
+pre-commit
