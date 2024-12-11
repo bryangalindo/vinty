@@ -57,7 +57,7 @@ def main():
         initial_sidebar_state="expanded",
     )
 
-    st.title("Resale Handbag Market Analytics")
+    st.title("Big Bag Data: Data-Driven Decisions for Luxury Resale")
 
     st.markdown(
         """
