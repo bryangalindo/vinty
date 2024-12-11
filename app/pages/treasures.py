@@ -403,58 +403,6 @@ def rebag_page():
 
         st.pyplot(plt)
 
-        st.title("Scatter Plot: Price vs Condition")
-        plt.figure(figsize=(10, 6))
-        sns.stripplot(
-            x="condition",
-            y="price",
-            data=filtered_df,
-            jitter=True,
-            size=5,
-            palette="Set1",
-        )
-        plt.title("Price vs Condition", fontsize=16)
-        plt.xlabel("Condition", fontsize=14)
-        plt.ylabel("Price", fontsize=14)
-        plt.xticks(rotation=45, ha="right")
-        st.pyplot(plt)
-
-        st.title("Number of Bags Sold by Color")
-
-        sales_by_color = (
-            filtered_df.groupby([df["sold_date"].dt.date, "exterior_color"])
-            .size()
-            .reset_index(name="bags_sold")
-        )
-
-        sales_by_color["sold_date"] = pd.to_datetime(sales_by_color["sold_date"])
-        sales_by_color["day_of_week"] = sales_by_color["sold_date"].dt.strftime(
-            "%Y-%m-%d (%A)"
-        )
-
-        fig, ax = plt.subplots(figsize=(12, 6))
-
-        sns.lineplot(
-            data=sales_by_color,
-            x="day_of_week",
-            y="bags_sold",
-            hue="exterior_color",
-            marker="o",
-            ax=ax,
-        )
-
-        ax.set_title("Number of Bags Sold by Color Per Day", fontsize=16)
-        ax.set_xlabel("Date (Day of Week)", fontsize=14)
-        ax.set_ylabel("Number of Bags Sold", fontsize=14)
-        ax.legend(title="Color", loc="upper left", bbox_to_anchor=(1.05, 1))
-        ax.grid(True, linestyle="--", alpha=0.6)
-
-        plt.xticks(rotation=45)
-
-        fig.tight_layout()
-
-        st.pyplot(fig)
-
         csv = filtered_df.to_csv(index=False).encode("utf-8")
         st.download_button(
             "Download Filtered Data as CSV",
