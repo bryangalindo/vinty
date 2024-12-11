@@ -67,8 +67,8 @@ def main():
         "where I built an end-to-end, fully automated analytics platform that provided insights into the handbags being sold in the market."
     )
     body_text_3 = (
-        "As a result of the analytics platform, Vinty was able to improve its decision-making in purchase strategies "
-        "+ pricing strategies, discover how its store’s performance aligns with the industry, "
+        "As a result of the analytics platform, Vinty was able to improve its decision-making in purchase and "
+        "pricing strategies, discover how its store’s performance aligns with the industry, "
         "and establish benchmarks for its store’s performance."
     )
     body_text_4 = "Feel free to see the slides below for more details or explore the rest website to see the full story behind this project!"
