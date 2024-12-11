@@ -64,7 +64,7 @@ def main():
     )
     body_text_2 = (
         "During this brief period, I had the opportunity to work with a small business called Vinty, a secondhand luxury handbag resale company, "
-        "where I built an end-to-end, fully automated analytics platform that provided insights into the products being sold in the market."
+        "where I built an end-to-end, fully automated analytics platform that provided insights into the handbags being sold in the market."
     )
     body_text_3 = (
         "As a result of the analytics platform, Vinty was able to improve its decision-making in purchase strategies "
